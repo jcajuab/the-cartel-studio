@@ -7,8 +7,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <RoleProvider>
       <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
-          <div className="flex h-12 items-center gap-3 px-4">
+        <header className="sticky top-0 z-50 h-12 w-full border-b border-border bg-background">
+          <div className="flex h-full items-center gap-3 px-4">
             <Image
               src="/logo.jpg"
               alt="The Cartel Studio"
