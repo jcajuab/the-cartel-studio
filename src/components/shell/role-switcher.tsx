@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 type Role = "Bartender" | "Manager";
 
@@ -37,13 +37,18 @@ export default function RoleSwitcher() {
   }
 
   return (
-    <Button
-      variant={role === "Manager" ? "default" : "outline"}
-      size="sm"
+    <button
+      type="button"
       onClick={toggle}
       aria-label={`Current role: ${role}. Click to switch.`}
+      className="cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      {role}
-    </Button>
+      <Badge
+        variant={role === "Manager" ? "default" : "outline"}
+        className="px-3 py-1"
+      >
+        {role}
+      </Badge>
+    </button>
   );
 }
