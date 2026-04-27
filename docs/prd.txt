@@ -1,0 +1,239 @@
+﻿Cartel Product Requirement Document
+________________
+PRD: CART (Core ERP System)
+1. Overview
+Product Name: Cart Type: Web-Based ERP System
+Cart is a centralized ERP platform designed to manage Sales, Inventory, Accounting, Payroll, Transaction History, and Business Metrics. It provides real-time synchronization, supports void transactions, and includes a General Ledger-based accounting system for structured financial tracking.
+
+
+2. Objectives
+* Centralize operations into one unified system
+* Ensure complete transaction traceability
+* Enable flexible financial tracking via categories
+* Provide accurate, auditable accounting records
+* Deliver real-time analytics for decision-making
+
+
+3. Target Users
+* Business Owners
+* Store Managers
+* Cashiers / Sales Staff
+* Accountants
+* HR / Payroll Staff
+
+
+4. Core Modules & Features
+
+
+4.1 Sales Module
+Goal: Efficient transaction processing with flexible tracking
+Features:
+* Product Catalog
+    * View all products (name, SKU, price, stock)
+    * Search, filter, categorize
+* POS / Checkout System
+    * Add/remove items to cart
+    * Adjust quantities
+    * Real-time total calculation
+
+
+Category of Choice (Tracking)
+Purpose: Allow flexible classification of transactions for reporting and accounting
+Instead of fixed payment methods, each transaction is assigned a Category, such as:
+* GCash
+* PayMaya
+* Credit Card
+* Cash
+* Bank Transfer
+* Custom categories (user-defined)
+Behavior:
+* Required selection before completing checkout
+* Categories are used for:
+    * Sales tracking
+    * Accounting classification
+    * Metrics breakdown
+
+
+* Receipt Generation
+    * Printable receipt
+    * Stored digitally
+
+
+Void Transaction Feature
+Purpose: Reverse completed transactions with audit control
+Requirements:
+* Restricted to authorized roles (Admin / Manager)
+* Mandatory reason input
+System Behavior:
+* Transaction marked as VOIDED (not deleted)
+* Automatically triggers:
+    * Inventory restoration
+    * Accounting reversal entry (General Ledger)
+    * Metrics recalculation
+* Fully logged for audit trail
+
+
+4.2 Inventory Module
+Goal: Maintain accurate stock levels
+Features:
+* Automatic stock deduction after checkout
+* Automatic restoration on void
+* Inventory dashboard:
+    * Stock levels
+    * Low-stock alerts
+    * Out-of-stock tracking
+* Product management:
+    * Add/edit/delete
+    * Manual adjustments
+
+
+4.3 Accounting Module
+Goal: Provide structured financial tracking using a General Ledger system
+
+
+General Ledger System
+Core Concept: Every financial transaction is recorded as a ledger entry
+Features:
+* Chart of Accounts (CoA)
+    * Assets
+    * Liabilities
+    * Equity
+    * Revenue
+    * Expenses
+* Double-entry accounting:
+    * Each transaction creates:
+        * Debit entry
+        * Credit entry
+
+
+Transaction Integration
+* Every sale generates:
+    * Revenue entry
+    * Corresponding asset entry (based on category)
+Example:
+* Sale via GCash →
+    * Debit: GCash Account
+    * Credit: Sales Revenue
+
+
+Void Integration
+* Voided transactions generate reversing entries:
+    * Debit: Sales Revenue
+    * Credit: Asset Account
+
+
+Financial Records
+* Journal entries
+* Ledger views per account
+* Trial balance (future-ready)
+
+
+Advanced Financial Reports
+Reports Included:
+* Profit & Loss (P&L)
+* Revenue Reports
+* Cash Flow Overview
+* Category-based breakdown
+* Ledger summaries
+Capabilities:
+* Drill-down to transaction level
+* Time-based filtering
+* Export-ready (future)
+
+
+4.4 Transaction History Module
+Goal: Maintain a complete audit trail
+Features:
+* Chronological list of all transactions
+* Filters:
+    * Date range
+    * Category
+    * Transaction ID
+    * Product
+* Transaction Details:
+    * Items
+    * Quantity
+    * Total
+    * Category
+    * Timestamp
+    * User/cashier
+    * Status (Completed / Voided)
+* Actions:
+    * View receipt
+    * Reprint
+
+
+Rules:
+* Transactions are immutable
+* No deletion allowed
+* Adjustments via void or new entries only
+
+
+4.5 Payroll Module
+Goal: Manage employee compensation
+Features:
+* Employee records
+* Salary computation
+* Payroll scheduling
+* Payment tracking
+
+
+4.6 Metrics & Analytics Module
+Goal: Deliver actionable business insights
+
+
+Core Metrics:
+* Net Worth
+* Total Revenue
+* Total Transactions
+* Category Distribution
+* Sales Trends
+
+
+Filtering Capabilities:
+* Daily
+* Weekly
+* Monthly
+* Yearly
+* Custom Date Range
+
+
+Features:
+* Interactive dashboard
+* Graphs and visualizations
+* Real-time recalculation
+
+
+5. System Flow
+Standard Flow
+1. Select products
+2. Assign category (required)
+3. Checkout
+4. Transaction recorded
+5. Inventory deducted
+6. General Ledger updated (debit & credit entries)
+7. Metrics updated
+
+
+Void Flow
+1. Authorized user initiates void
+2. Inputs reason
+3. Transaction marked VOIDED
+4. Inventory restored
+5. Reversing ledger entries created
+6. Metrics updated
+
+
+6. Non-Functional Requirements
+* Role-based access control
+* Secure authentication
+* Real-time system updates
+* Scalable architecture
+* Full audit logging
+
+
+7. Success Metrics
+* Accurate financial records (ledger-balanced)
+* Reduced inventory discrepancies
+* Faster checkout operations
+* Clear audit trails for all transactions
