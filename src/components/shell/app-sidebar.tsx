@@ -1,19 +1,11 @@
 "use client";
 
-import {
-  Analytics01Icon,
-  Archive02Icon,
-  Book04Icon,
-  Coins01Icon,
-  Invoice01Icon,
-  NoteIcon,
-  ShoppingCart01Icon,
-} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { getActiveItem, NAV_ITEMS } from "@/components/shell/nav-items";
 import RoleSwitcher from "@/components/shell/role-switcher";
 import {
   Sidebar,
@@ -26,18 +18,9 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 
-const navItems = [
-  { label: "Metrics", href: "/metrics", icon: Analytics01Icon },
-  { label: "POS", href: "/pos", icon: ShoppingCart01Icon },
-  { label: "Transactions", href: "/transactions", icon: Invoice01Icon },
-  { label: "Inventory", href: "/inventory", icon: Archive02Icon },
-  { label: "Ledger", href: "/ledger", icon: Book04Icon },
-  { label: "Journal", href: "/journal", icon: NoteIcon },
-  { label: "Payroll", href: "/payroll", icon: Coins01Icon },
-] as const;
-
 export function AppSidebar() {
   const pathname = usePathname();
+  const activeHref = getActiveItem(pathname)?.href;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME ?? "Cart";
 
   return (
@@ -59,27 +42,20 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarMenu className="gap-1 px-2 py-1">
-          {navItems.map(({ label, href, icon }) => {
-            const active =
-              href === "/metrics"
-                ? pathname === "/metrics"
-                : pathname === href || pathname.startsWith(`${href}/`);
-
-            return (
-              <SidebarMenuItem key={href}>
-                <SidebarMenuButton
-                  isActive={active}
-                  tooltip={label}
-                  render={
-                    <Link href={href}>
-                      <HugeiconsIcon icon={icon} />
-                      <span>{label}</span>
-                    </Link>
-                  }
-                />
-              </SidebarMenuItem>
-            );
-          })}
+          {NAV_ITEMS.map(({ label, href, icon }) => (
+            <SidebarMenuItem key={href}>
+              <SidebarMenuButton
+                isActive={activeHref === href}
+                tooltip={label}
+                render={
+                  <Link href={href}>
+                    <HugeiconsIcon icon={icon} />
+                    <span>{label}</span>
+                  </Link>
+                }
+              />
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
       </SidebarContent>
 

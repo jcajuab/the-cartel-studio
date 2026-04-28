@@ -25,12 +25,9 @@ export default async function LedgerPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Chart of Accounts</h1>
-        <p className="text-sm text-muted-foreground">
-          Live balances from journal entries — every sale and void posts here.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Live balances from journal entries — every sale and void posts here.
+      </p>
 
       {accounts.length === 0 ? (
         <p className="text-muted-foreground text-sm py-8 text-center">

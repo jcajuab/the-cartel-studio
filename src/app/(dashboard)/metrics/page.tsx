@@ -16,12 +16,9 @@ export default async function MetricsPage() {
 
   return (
     <div className="p-6 space-y-8">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Tonight at a glance</h1>
-        <p className="text-sm text-muted-foreground">
-          Live from the ledger — drill any category to its journal entries.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Live from the ledger — drill any category to its journal entries.
+      </p>
 
       {/* KPI tiles (not clickable) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -38,7 +38,7 @@ export default async function AccountLedgerPage({ params }: Props) {
           <span className="font-mono text-sm text-muted-foreground">
             {account.code}
           </span>
-          <h1 className="text-2xl font-semibold">{account.name}</h1>
+          <span className="text-base font-semibold">{account.name}</span>
           <Badge variant="outline">{account.type}</Badge>
         </div>
         <div className="flex items-center gap-4">

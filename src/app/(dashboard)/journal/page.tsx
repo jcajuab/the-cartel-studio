@@ -16,12 +16,9 @@ export default async function JournalPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Journal</h1>
-        <p className="text-sm text-muted-foreground">
-          All journal entries, newest first.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        All journal entries, newest first.
+      </p>
 
       {entries.length === 0 ? (
         <p className="text-muted-foreground text-sm py-8 text-center">

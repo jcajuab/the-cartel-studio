@@ -52,10 +52,7 @@ export default function PayrollPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold">Payroll</h1>
-          <Badge variant="outline">Coming Soon</Badge>
-        </div>
+        <Badge variant="outline">Coming Soon</Badge>
         <p className="text-sm text-muted-foreground">
           Employee compensation tracking — preview
         </p>

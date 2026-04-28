@@ -14,13 +14,10 @@ export default async function InventoryPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Inventory</h1>
-        <p className="text-sm text-muted-foreground">
-          Stock vs sold tonight — restored automatically when transactions are
-          voided.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Stock vs sold tonight — restored automatically when transactions are
+        voided.
+      </p>
 
       {rows.length === 0 ? (
         <p className="text-muted-foreground text-sm py-8 text-center">

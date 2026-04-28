@@ -32,7 +32,6 @@ export default async function TransactionDetailPage({ params }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <h1 className="text-2xl font-semibold shrink-0">Transaction</h1>
           <span className="font-mono text-sm text-muted-foreground truncate">
             {shortId}
           </span>

@@ -183,10 +183,6 @@ export default function PosTerminal({ products, categories }: Props) {
     <div className="flex h-full gap-4 overflow-hidden p-4 lg:gap-6 lg:p-6">
       {/* MENU */}
       <section className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden">
-        <header className="flex items-baseline">
-          <h1 className="text-2xl font-semibold tracking-tight">POS</h1>
-        </header>
-
         <div className="relative">
           <nav
             ref={tabsFade.ref}

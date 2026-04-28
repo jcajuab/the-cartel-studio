@@ -56,8 +56,6 @@ export default async function TransactionsPage({ searchParams }: Props) {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Transactions</h1>
-
       <TransactionFilters categories={categories} />
 
       {txList.length === 0 ? (
