@@ -1,6 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Category {
   id: string;
@@ -10,6 +19,13 @@ interface Category {
 interface TransactionFiltersProps {
   categories: Category[];
 }
+
+const ALL = "all";
+const STATUS_LABELS: Record<string, string> = {
+  all: "All",
+  COMPLETED: "Completed",
+  VOIDED: "Voided",
+};
 
 export default function TransactionFilters({
   categories,
@@ -27,8 +43,18 @@ export default function TransactionFilters({
     router.replace(`?${params.toString()}`);
   }
 
+  const status = searchParams.get("status") ?? ALL;
+  const categoryId = searchParams.get("categoryId") ?? ALL;
+  const dateFrom = searchParams.get("dateFrom") ?? "";
+  const dateTo = searchParams.get("dateTo") ?? "";
+
+  const categoryLabel =
+    categoryId === ALL
+      ? "All"
+      : (categories.find((c) => c.id === categoryId)?.name ?? "All");
+
   return (
-    <div className="flex flex-wrap gap-3 items-end">
+    <div className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1">
         <label
           htmlFor="filter-status"
@@ -36,16 +62,21 @@ export default function TransactionFilters({
         >
           Status
         </label>
-        <select
-          id="filter-status"
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          defaultValue={searchParams.get("status") ?? ""}
-          onChange={(e) => push("status", e.target.value)}
+        <Select
+          value={status}
+          onValueChange={(v) => push("status", !v || v === ALL ? "" : v)}
         >
-          <option value="">All</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="VOIDED">Voided</option>
-        </select>
+          <SelectTrigger id="filter-status" className="w-[140px]">
+            <SelectValue placeholder="All">
+              {STATUS_LABELS[status] ?? "All"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="VOIDED">Voided</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -55,19 +86,22 @@ export default function TransactionFilters({
         >
           Category
         </label>
-        <select
-          id="filter-category"
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          defaultValue={searchParams.get("categoryId") ?? ""}
-          onChange={(e) => push("categoryId", e.target.value)}
+        <Select
+          value={categoryId}
+          onValueChange={(v) => push("categoryId", !v || v === ALL ? "" : v)}
         >
-          <option value="">All</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="filter-category" className="w-[160px]">
+            <SelectValue placeholder="All">{categoryLabel}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -77,11 +111,10 @@ export default function TransactionFilters({
         >
           Date from
         </label>
-        <input
+        <Input
           id="filter-date-from"
           type="date"
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          defaultValue={searchParams.get("dateFrom") ?? ""}
+          value={dateFrom}
           onChange={(e) => push("dateFrom", e.target.value)}
         />
       </div>
@@ -93,22 +126,21 @@ export default function TransactionFilters({
         >
           Date to
         </label>
-        <input
+        <Input
           id="filter-date-to"
           type="date"
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          defaultValue={searchParams.get("dateTo") ?? ""}
+          value={dateTo}
           onChange={(e) => push("dateTo", e.target.value)}
         />
       </div>
 
-      <button
+      <Button
         type="button"
-        className="h-9 rounded-md border border-input bg-background px-4 text-sm shadow-sm hover:bg-accent hover:text-accent-foreground"
+        variant="outline"
         onClick={() => router.replace("?")}
       >
         Reset
-      </button>
+      </Button>
     </div>
   );
 }
