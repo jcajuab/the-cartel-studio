@@ -180,7 +180,7 @@ export default function PosTerminal({ products, categories }: Props) {
   const canCheckout = cart.size > 0 && categoryId !== null && !isPending;
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] gap-4 overflow-hidden p-4 lg:gap-6 lg:p-6">
+    <div className="flex h-full gap-4 overflow-hidden p-4 lg:gap-6 lg:p-6">
       {/* MENU */}
       <section className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden">
         <header className="flex items-baseline">
