@@ -24,7 +24,7 @@ export function AppSidebar() {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME ?? "Cart";
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
           <Image

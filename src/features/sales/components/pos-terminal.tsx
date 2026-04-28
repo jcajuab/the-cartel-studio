@@ -143,12 +143,12 @@ export default function PosTerminal({ products, categories }: Props) {
     setCategoryId(null);
   }
 
-  const tabsFade = useScrollFade<HTMLElement>("horizontal");
-  const productsFade = useScrollFade<HTMLDivElement>(
+  const tabsFade = useScrollFade("horizontal", "nav");
+  const productsFade = useScrollFade(
     "vertical",
     '[data-slot="scroll-area-viewport"]',
   );
-  const itemsFade = useScrollFade<HTMLDivElement>(
+  const itemsFade = useScrollFade(
     "vertical",
     '[data-slot="scroll-area-viewport"]',
   );
@@ -183,9 +183,8 @@ export default function PosTerminal({ products, categories }: Props) {
     <div className="flex h-full gap-4 overflow-hidden p-4 lg:gap-6 lg:p-6">
       {/* MENU */}
       <section className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden">
-        <div className="relative">
+        <div ref={tabsFade.containerRef} className="relative">
           <nav
-            ref={tabsFade.ref}
             aria-label="Menu categories"
             className="flex shrink-0 gap-2 overflow-x-auto pb-1"
           >
@@ -227,22 +226,23 @@ export default function PosTerminal({ products, categories }: Props) {
             })}
           </nav>
           <div
+            ref={tabsFade.startRef}
             aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-background/70 to-transparent transition-opacity duration-200",
-              tabsFade.start ? "opacity-100" : "opacity-0",
-            )}
+            style={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-background/70 to-transparent transition-opacity duration-200"
           />
           <div
+            ref={tabsFade.endRef}
             aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-background/70 to-transparent transition-opacity duration-200",
-              tabsFade.end ? "opacity-100" : "opacity-0",
-            )}
+            style={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-background/70 to-transparent transition-opacity duration-200"
           />
         </div>
 
-        <div ref={productsFade.ref} className="relative min-h-0 flex-1">
+        <div
+          ref={productsFade.containerRef}
+          className="relative min-h-0 flex-1"
+        >
           <ScrollArea className="h-full">
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3 pr-3">
               {visibleProducts.map((product) => {
@@ -312,18 +312,16 @@ export default function PosTerminal({ products, categories }: Props) {
             </div>
           </ScrollArea>
           <div
+            ref={productsFade.startRef}
             aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-background/70 to-transparent transition-opacity duration-200",
-              productsFade.start ? "opacity-100" : "opacity-0",
-            )}
+            style={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-background/70 to-transparent transition-opacity duration-200"
           />
           <div
+            ref={productsFade.endRef}
             aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-background/70 to-transparent transition-opacity duration-200",
-              productsFade.end ? "opacity-100" : "opacity-0",
-            )}
+            style={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-background/70 to-transparent transition-opacity duration-200"
           />
         </div>
       </section>
@@ -352,7 +350,7 @@ export default function PosTerminal({ products, categories }: Props) {
           )}
         </header>
 
-        <div ref={itemsFade.ref} className="relative min-h-0 flex-1">
+        <div ref={itemsFade.containerRef} className="relative min-h-0 flex-1">
           <ScrollArea className="h-full">
             <div className="px-5 py-4">
               <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
@@ -385,18 +383,16 @@ export default function PosTerminal({ products, categories }: Props) {
             </div>
           </ScrollArea>
           <div
+            ref={itemsFade.startRef}
             aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-card/70 to-transparent transition-opacity duration-200",
-              itemsFade.start ? "opacity-100" : "opacity-0",
-            )}
+            style={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-card/70 to-transparent transition-opacity duration-200"
           />
           <div
+            ref={itemsFade.endRef}
             aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-card/70 to-transparent transition-opacity duration-200",
-              itemsFade.end ? "opacity-100" : "opacity-0",
-            )}
+            style={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-card/70 to-transparent transition-opacity duration-200"
           />
         </div>
 
