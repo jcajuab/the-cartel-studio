@@ -1,4 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { accounts, journalEntries, transactions } from "@/lib/db/schema";
 
@@ -12,7 +13,9 @@ export interface AccountWithBalance {
   balance: number;
 }
 
-export async function getAccounts(): Promise<AccountWithBalance[]> {
+export const getAccounts = cache(async function getAccounts(): Promise<
+  AccountWithBalance[]
+> {
   const rows = await db
     .select({
       id: accounts.id,
@@ -30,7 +33,7 @@ export async function getAccounts(): Promise<AccountWithBalance[]> {
     .orderBy(asc(accounts.code));
 
   return rows as AccountWithBalance[];
-}
+});
 
 export interface LedgerEntry {
   id: string;
@@ -43,7 +46,7 @@ export interface LedgerEntry {
   transactionStatus: "COMPLETED" | "VOIDED";
 }
 
-export async function getAccountLedger(
+export const getAccountLedger = cache(async function getAccountLedger(
   accountId: string,
 ): Promise<{ account: AccountWithBalance; entries: LedgerEntry[] } | null> {
   // Fetch the one account with its aggregate balance
@@ -98,7 +101,7 @@ export async function getAccountLedger(
   });
 
   return { account: account as AccountWithBalance, entries };
-}
+});
 
 export interface JournalEntryRow {
   id: string;
@@ -113,48 +116,53 @@ export interface JournalEntryRow {
   transactionStatus: "COMPLETED" | "VOIDED";
 }
 
-export async function getJournalEntries(filters?: {
-  isReversal?: boolean;
-  transactionStatus?: "COMPLETED" | "VOIDED";
-}): Promise<JournalEntryRow[]> {
-  const query = db
-    .select({
-      id: journalEntries.id,
-      postedAt: journalEntries.postedAt,
-      accountName: accounts.name,
-      accountType: accounts.type,
-      accountCode: accounts.code,
-      debit: journalEntries.debit,
-      credit: journalEntries.credit,
-      isReversal: journalEntries.isReversal,
-      transactionId: journalEntries.transactionId,
-      transactionStatus: transactions.status,
-    })
-    .from(journalEntries)
-    .innerJoin(accounts, eq(journalEntries.accountId, accounts.id))
-    .innerJoin(transactions, eq(journalEntries.transactionId, transactions.id));
+export const getJournalEntries = cache(
+  async function getJournalEntries(filters?: {
+    isReversal?: boolean;
+    transactionStatus?: "COMPLETED" | "VOIDED";
+  }): Promise<JournalEntryRow[]> {
+    const query = db
+      .select({
+        id: journalEntries.id,
+        postedAt: journalEntries.postedAt,
+        accountName: accounts.name,
+        accountType: accounts.type,
+        accountCode: accounts.code,
+        debit: journalEntries.debit,
+        credit: journalEntries.credit,
+        isReversal: journalEntries.isReversal,
+        transactionId: journalEntries.transactionId,
+        transactionStatus: transactions.status,
+      })
+      .from(journalEntries)
+      .innerJoin(accounts, eq(journalEntries.accountId, accounts.id))
+      .innerJoin(
+        transactions,
+        eq(journalEntries.transactionId, transactions.id),
+      );
 
-  const conditions = [];
+    const conditions = [];
 
-  if (filters?.isReversal !== undefined) {
-    conditions.push(eq(journalEntries.isReversal, filters.isReversal));
-  }
-  if (filters?.transactionStatus) {
-    conditions.push(eq(transactions.status, filters.transactionStatus));
-  }
+    if (filters?.isReversal !== undefined) {
+      conditions.push(eq(journalEntries.isReversal, filters.isReversal));
+    }
+    if (filters?.transactionStatus) {
+      conditions.push(eq(transactions.status, filters.transactionStatus));
+    }
 
-  const rows = await query
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(sql`${journalEntries.postedAt} desc`);
+    const rows = await query
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(sql`${journalEntries.postedAt} desc`);
 
-  return rows.map((r) => ({
-    ...r,
-    postedAt: r.postedAt ?? new Date(),
-    transactionStatus: r.transactionStatus as "COMPLETED" | "VOIDED",
-  }));
-}
+    return rows.map((r) => ({
+      ...r,
+      postedAt: r.postedAt ?? new Date(),
+      transactionStatus: r.transactionStatus as "COMPLETED" | "VOIDED",
+    }));
+  },
+);
 
-export async function getBalanceCheck(): Promise<{
+export const getBalanceCheck = cache(async function getBalanceCheck(): Promise<{
   balanced: boolean;
   diff: number;
 }> {
@@ -168,4 +176,4 @@ export async function getBalanceCheck(): Promise<{
 
   const diff = row?.diff ?? 0;
   return { balanced: diff === 0, diff };
-}
+});

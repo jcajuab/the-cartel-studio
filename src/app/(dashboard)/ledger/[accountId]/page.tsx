@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { DetailPageLoading } from "@/components/shell/page-loading";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -24,6 +26,14 @@ function displayBalance(balance: number, type: string): number {
 }
 
 export default async function AccountLedgerPage({ params }: Props) {
+  return (
+    <Suspense fallback={<DetailPageLoading />}>
+      <AccountLedgerDetail params={params} />
+    </Suspense>
+  );
+}
+
+async function AccountLedgerDetail({ params }: Props) {
   const { accountId } = await params;
   const result = await getAccountLedger(accountId);
 

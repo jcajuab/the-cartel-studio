@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { DetailPageLoading } from "@/components/shell/page-loading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,7 +19,15 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function TransactionDetailPage({ params }: Props) {
+export default function TransactionDetailPage({ params }: Props) {
+  return (
+    <Suspense fallback={<DetailPageLoading />}>
+      <TransactionDetail params={params} />
+    </Suspense>
+  );
+}
+
+async function TransactionDetail({ params }: Props) {
   const { id } = await params;
 
   const detail = await getTransactionDetail(id);

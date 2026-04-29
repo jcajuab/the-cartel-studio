@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { TableLoadingBlock } from "@/components/shell/page-loading";
 import {
   Table,
   TableBody,
@@ -9,16 +11,26 @@ import {
 import { StockBadge } from "@/features/inventory/components/stock-badge";
 import { getInventoryWithSoldTonight } from "@/features/inventory/queries";
 
-export default async function InventoryPage() {
-  const rows = await getInventoryWithSoldTonight();
-
+export default function InventoryPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-4 lg:p-6">
       <p className="text-sm text-muted-foreground">
         Stock vs sold tonight — restored automatically when transactions are
         voided.
       </p>
 
+      <Suspense fallback={<TableLoadingBlock columns={4} rows={8} />}>
+        <InventoryTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function InventoryTable() {
+  const rows = await getInventoryWithSoldTonight();
+
+  return (
+    <>
       {rows.length === 0 ? (
         <p className="text-muted-foreground text-sm py-8 text-center">
           No products found.
@@ -60,6 +72,6 @@ export default async function InventoryPage() {
           </TableBody>
         </Table>
       )}
-    </div>
+    </>
   );
 }

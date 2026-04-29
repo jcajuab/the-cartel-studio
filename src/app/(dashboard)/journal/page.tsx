@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { TableLoadingBlock } from "@/components/shell/page-loading";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -11,15 +13,25 @@ import {
 import { getJournalEntries } from "@/features/accounting/queries";
 import { formatDateTime, formatPhp } from "@/lib/format";
 
-export default async function JournalPage() {
-  const entries = await getJournalEntries();
-
+export default function JournalPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-4 lg:p-6">
       <p className="text-sm text-muted-foreground">
         All journal entries, newest first.
       </p>
 
+      <Suspense fallback={<TableLoadingBlock columns={7} rows={8} />}>
+        <JournalTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function JournalTable() {
+  const entries = await getJournalEntries();
+
+  return (
+    <>
       {entries.length === 0 ? (
         <p className="text-muted-foreground text-sm py-8 text-center">
           No journal entries found.
@@ -88,6 +100,6 @@ export default async function JournalPage() {
           </TableBody>
         </Table>
       )}
-    </div>
+    </>
   );
 }

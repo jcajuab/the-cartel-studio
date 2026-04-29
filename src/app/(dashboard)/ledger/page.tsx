@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { TableLoadingBlock } from "@/components/shell/page-loading";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -21,14 +23,24 @@ function displayBalance(balance: number, type: string): number {
 }
 
 export default async function LedgerPage() {
-  const accounts = await getAccounts();
-
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-4 lg:p-6">
       <p className="text-sm text-muted-foreground">
         Live balances from journal entries — every sale and void posts here.
       </p>
 
+      <Suspense fallback={<TableLoadingBlock columns={5} rows={8} />}>
+        <LedgerTable />
+      </Suspense>
+    </div>
+  );
+}
+
+async function LedgerTable() {
+  const accounts = await getAccounts();
+
+  return (
+    <>
       {accounts.length === 0 ? (
         <p className="text-muted-foreground text-sm py-8 text-center">
           No accounts found.
@@ -70,6 +82,6 @@ export default async function LedgerPage() {
           </TableBody>
         </Table>
       )}
-    </div>
+    </>
   );
 }

@@ -1,14 +1,14 @@
 import {
-  Analytics01Icon,
   Archive02Icon,
   Book04Icon,
   Coins01Icon,
+  DashboardSquare01Icon,
   Invoice01Icon,
   NoteIcon,
   ShoppingCart01Icon,
 } from "@hugeicons/core-free-icons";
 
-type IconRef = typeof Analytics01Icon;
+type IconRef = typeof DashboardSquare01Icon;
 
 export interface NavItem {
   label: string;
@@ -17,7 +17,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { label: "Metrics", href: "/metrics", icon: Analytics01Icon },
+  { label: "Dashboard", href: "/dashboard", icon: DashboardSquare01Icon },
   { label: "POS", href: "/pos", icon: ShoppingCart01Icon },
   { label: "Transactions", href: "/transactions", icon: Invoice01Icon },
   { label: "Inventory", href: "/inventory", icon: Archive02Icon },
@@ -28,9 +28,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
 
 export function getActiveItem(pathname: string): NavItem | null {
   for (const item of NAV_ITEMS) {
-    if (item.href === "/metrics") {
-      if (pathname === "/metrics") return item;
-    } else if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
+    if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
       return item;
     }
   }

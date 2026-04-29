@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { cache } from "react";
 import { db } from "@/lib/db";
 import {
   accounts,
@@ -16,7 +17,9 @@ export interface TransactionFilters {
   dateTo?: Date;
 }
 
-export async function getTransactions(filters: TransactionFilters = {}) {
+export const getTransactions = cache(function getTransactions(
+  filters: TransactionFilters = {},
+) {
   const conditions = [];
 
   if (filters.status) {
@@ -48,9 +51,11 @@ export async function getTransactions(filters: TransactionFilters = {}) {
     .innerJoin(categories, eq(transactions.categoryId, categories.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(transactions.createdAt));
-}
+});
 
-export async function getTransactionDetail(id: string) {
+export const getTransactionDetail = cache(async function getTransactionDetail(
+  id: string,
+) {
   const [tx] = await db
     .select({
       id: transactions.id,
@@ -100,4 +105,4 @@ export async function getTransactionDetail(id: string) {
     .orderBy(asc(journalEntries.postedAt), asc(journalEntries.isReversal));
 
   return { transaction: tx, items, entries };
-}
+});

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { TablePageLoading } from "@/components/shell/page-loading";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -49,13 +51,27 @@ export default async function TransactionsPage({ searchParams }: Props) {
 
   const hasFilters = Object.keys(filters).length > 0;
 
+  return (
+    <Suspense fallback={<TablePageLoading columns={4} rows={8} showToolbar />}>
+      <TransactionsContent filters={filters} hasFilters={hasFilters} />
+    </Suspense>
+  );
+}
+
+async function TransactionsContent({
+  filters,
+  hasFilters,
+}: {
+  filters: Filters;
+  hasFilters: boolean;
+}) {
   const [txList, categories] = await Promise.all([
     getTransactions(filters),
     getCategories(),
   ]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-4 lg:p-6">
       <TransactionFilters categories={categories} />
 
       {txList.length === 0 ? (
