@@ -28,7 +28,7 @@ import { completeCheckout } from "@/features/sales/actions";
 import { useScrollFade } from "@/hooks/use-scroll-fade";
 import { formatPhp } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import ReceiptScreen from "./receipt-screen";
+import ReceiptScreen, { type CompletedReceipt } from "./receipt-screen";
 
 type Product = {
   id: string;
@@ -44,9 +44,9 @@ type Category = {
 };
 
 type CheckoutState =
-  | null
-  | { error: string }
-  | { transactionId: string; total: number };
+  | { status: "idle" }
+  | { status: "error"; error: string }
+  | { status: "success"; receipt: CompletedReceipt };
 
 interface Props {
   products: Product[];
@@ -71,27 +71,75 @@ const MENU_GROUP_ICONS: Record<ProductGroupId, typeof Restaurant02Icon> = {
 };
 
 export default function PosTerminal({ products, categories }: Props) {
+  const [saleSessionKey, setSaleSessionKey] = useState(0);
+
+  return (
+    <PosSaleSession
+      key={saleSessionKey}
+      products={products}
+      categories={categories}
+      onNewSale={() => setSaleSessionKey((key) => key + 1)}
+    />
+  );
+}
+
+function PosSaleSession({
+  products,
+  categories,
+  onNewSale,
+}: Props & { onNewSale: () => void }) {
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string>("all");
-  const [completedAt] = useState<Date>(new Date());
 
   const [state, dispatch, isPending] = useActionState<CheckoutState, FormData>(
     async (_prev, _formData) => {
-      const items = Array.from(cart.entries()).map(([productId, qty]) => ({
-        productId,
-        qty,
+      const checkoutItems = Array.from(cart.entries()).map(
+        ([productId, qty]) => ({
+          productId,
+          qty,
+        }),
+      );
+      const selectedCategory = categories.find(
+        (category) => category.id === categoryId,
+      );
+      const receiptItems = cartItems.map((item) => ({
+        name: item.product.name,
+        qty: item.qty,
+        unitPrice: item.product.price,
+        subtotal: item.subtotal,
       }));
-      if (!categoryId) return { error: "Please select a payment method" };
+
+      if (!selectedCategory) {
+        return { status: "error", error: "Please select a payment method" };
+      }
+      if (checkoutItems.length === 0) {
+        return { status: "error", error: "Cart is empty" };
+      }
+
       try {
-        return await completeCheckout(items, categoryId);
+        const result = await completeCheckout(
+          checkoutItems,
+          selectedCategory.id,
+        );
+        return {
+          status: "success",
+          receipt: {
+            transactionId: result.transactionId,
+            items: receiptItems,
+            total: result.total,
+            categoryName: selectedCategory.name,
+            completedAt: new Date(),
+          },
+        };
       } catch (err) {
         return {
+          status: "error",
           error: err instanceof Error ? err.message : "Checkout failed",
         };
       }
     },
-    null,
+    { status: "idle" },
   );
 
   const groupCounts = useMemo(() => {
@@ -151,36 +199,20 @@ export default function PosTerminal({ products, categories }: Props) {
     '[data-slot="scroll-area-viewport"]',
   );
 
-  const isCheckoutState = (
-    s: CheckoutState,
-  ): s is { transactionId: string; total: number } =>
-    s !== null && "transactionId" in s;
-
-  if (isCheckoutState(state)) {
-    const selectedCategory = categories.find((c) => c.id === categoryId);
-    return (
-      <ReceiptScreen
-        transactionId={state.transactionId}
-        items={cartItems.map((i) => ({
-          name: i.product.name,
-          qty: i.qty,
-          unitPrice: i.product.price,
-          subtotal: i.subtotal,
-        }))}
-        total={state.total}
-        categoryName={selectedCategory?.name ?? "Unknown"}
-        completedAt={completedAt}
-        onNewSale={resetSale}
-      />
-    );
-  }
-
   const canCheckout = cart.size > 0 && categoryId !== null && !isPending;
+  const completedReceipt = state.status === "success" ? state.receipt : null;
+  const isComplete = completedReceipt !== null;
 
   return (
     <div className="flex h-full gap-4 overflow-hidden p-4 lg:p-6">
       {/* MENU */}
-      <section className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden">
+      <section
+        aria-hidden={isComplete}
+        className={cn(
+          "flex min-w-0 flex-1 flex-col gap-4 overflow-hidden transition",
+          isComplete && "pointer-events-none opacity-35 blur-[1px]",
+        )}
+      >
         <div ref={tabsFade.containerRef} className="relative">
           <nav
             aria-label="Menu categories"
@@ -190,13 +222,15 @@ export default function PosTerminal({ products, categories }: Props) {
               const isActive = activeGroup === group.id;
               const icon = MENU_GROUP_ICONS[group.id];
               return (
-                <button
+                <Button
                   key={group.id}
                   type="button"
+                  variant="outline"
                   onClick={() => setActiveGroup(group.id)}
                   aria-pressed={isActive}
+                  disabled={isComplete}
                   className={cn(
-                    "flex shrink-0 items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition",
+                    "h-auto shrink-0 justify-start gap-2.5 rounded-xl border px-3 py-2 text-left",
                     isActive
                       ? "border-primary bg-primary/10 ring-1 ring-primary"
                       : "border-border bg-card hover:bg-accent",
@@ -220,7 +254,7 @@ export default function PosTerminal({ products, categories }: Props) {
                       {groupCounts[group.id] ?? 0} items
                     </span>
                   </span>
-                </button>
+                </Button>
               );
             })}
           </nav>
@@ -286,7 +320,7 @@ export default function PosTerminal({ products, categories }: Props) {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => setQty(product.id, qty - 1)}
-                          disabled={qty === 0}
+                          disabled={isComplete || qty === 0}
                           aria-label={`Decrease ${product.name}`}
                         >
                           <HugeiconsIcon icon={MinusSignIcon} size={12} />
@@ -299,7 +333,9 @@ export default function PosTerminal({ products, categories }: Props) {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => setQty(product.id, qty + 1)}
-                          disabled={outOfStock || qty >= product.stockQty}
+                          disabled={
+                            isComplete || outOfStock || qty >= product.stockQty
+                          }
                           aria-label={`Add ${product.name}`}
                         >
                           <HugeiconsIcon icon={Add01Icon} size={12} />
@@ -328,132 +364,150 @@ export default function PosTerminal({ products, categories }: Props) {
 
       {/* ORDER PANEL */}
       <aside className="flex w-[320px] shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card 2xl:w-[360px]">
-        <header className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              Current Order
-            </p>
-            <p className="mt-1.5 text-lg font-semibold leading-none">
-              {cart.size === 0
-                ? "No items yet"
-                : `${cart.size} ${cart.size === 1 ? "item" : "items"}`}
-            </p>
-          </div>
-          {cart.size > 0 && (
-            <button
-              type="button"
-              onClick={resetSale}
-              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Clear
-            </button>
-          )}
-        </header>
-
-        <div ref={itemsFade.containerRef} className="relative min-h-0 flex-1">
-          <ScrollArea className="h-full">
-            <div className="px-5 py-4">
-              <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
-                Ordered Items
-              </p>
-              {cart.size === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Tap items in the menu to start an order.
+        {completedReceipt ? (
+          <ReceiptScreen receipt={completedReceipt} onNewSale={onNewSale} />
+        ) : (
+          <>
+            <header className="flex items-center justify-between border-b border-border px-5 py-4">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Current Order
                 </p>
-              ) : (
-                <ul className="space-y-3">
-                  {cartItems.map(({ product, qty, subtotal }) => (
-                    <li
-                      key={product.id}
-                      className="flex items-baseline justify-between gap-3 text-sm"
-                    >
-                      <span className="flex min-w-0 items-baseline gap-2">
-                        <span className="text-muted-foreground tabular-nums">
-                          {qty}x
-                        </span>
-                        <span className="truncate">{product.name}</span>
-                      </span>
-                      <span className="shrink-0 font-medium tabular-nums">
-                        {formatPhp(subtotal)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <p className="mt-1.5 text-lg font-semibold leading-none">
+                  {cart.size === 0
+                    ? "No items yet"
+                    : `${cart.size} ${cart.size === 1 ? "item" : "items"}`}
+                </p>
+              </div>
+              {cart.size > 0 && (
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  onClick={resetSale}
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </Button>
               )}
-            </div>
-          </ScrollArea>
-          <div
-            ref={itemsFade.startRef}
-            aria-hidden="true"
-            style={{ opacity: 0 }}
-            className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-card/70 to-transparent transition-opacity duration-200"
-          />
-          <div
-            ref={itemsFade.endRef}
-            aria-hidden="true"
-            style={{ opacity: 0 }}
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-card/70 to-transparent transition-opacity duration-200"
-          />
-        </div>
+            </header>
 
-        <footer className="space-y-5 border-t border-border px-5 py-4">
-          <div>
-            <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
-              Payment Summary
-            </p>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="tabular-nums">{formatPhp(total)}</span>
+            <div
+              ref={itemsFade.containerRef}
+              className="relative min-h-0 flex-1"
+            >
+              <ScrollArea className="h-full">
+                <div className="px-5 py-4">
+                  <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
+                    Ordered Items
+                  </p>
+                  {cart.size === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Tap items in the menu to start an order.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {cartItems.map(({ product, qty, subtotal }) => (
+                        <li
+                          key={product.id}
+                          className="flex items-baseline justify-between gap-3 text-sm"
+                        >
+                          <span className="flex min-w-0 items-baseline gap-2">
+                            <span className="text-muted-foreground tabular-nums">
+                              {qty}x
+                            </span>
+                            <span className="truncate">{product.name}</span>
+                          </span>
+                          <span className="shrink-0 font-medium tabular-nums">
+                            {formatPhp(subtotal)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </ScrollArea>
+              <div
+                ref={itemsFade.startRef}
+                aria-hidden="true"
+                style={{ opacity: 0 }}
+                className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-card/70 to-transparent transition-opacity duration-200"
+              />
+              <div
+                ref={itemsFade.endRef}
+                aria-hidden="true"
+                style={{ opacity: 0 }}
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-card/70 to-transparent transition-opacity duration-200"
+              />
+            </div>
+
+            <footer className="space-y-5 border-t border-border px-5 py-4">
+              <div>
+                <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
+                  Payment Summary
+                </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="tabular-nums">{formatPhp(total)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
+                    <span>Total Payable</span>
+                    <span className="tabular-nums">{formatPhp(total)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
-                <span>Total Payable</span>
-                <span className="tabular-nums">{formatPhp(total)}</span>
+
+              <div>
+                <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
+                  Payment Method
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {categories.map((cat) => {
+                    const isActive = categoryId === cat.id;
+                    const icon = PAYMENT_ICONS[cat.name] ?? CreditCardIcon;
+                    return (
+                      <Button
+                        key={cat.id}
+                        type="button"
+                        variant="outline"
+                        onClick={() => setCategoryId(cat.id)}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "h-auto flex-col gap-1.5 rounded-lg border px-2 py-2.5 text-xs",
+                          isActive
+                            ? "border-primary bg-primary/10 text-foreground ring-1 ring-primary"
+                            : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      >
+                        <HugeiconsIcon icon={icon} size={16} />
+                        <span className="font-medium leading-tight">
+                          {cat.name}
+                        </span>
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div>
-            <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
-              Payment Method
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {categories.map((cat) => {
-                const isActive = categoryId === cat.id;
-                const icon = PAYMENT_ICONS[cat.name] ?? CreditCardIcon;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategoryId(cat.id)}
-                    aria-pressed={isActive}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-lg border px-2 py-2.5 text-xs transition",
-                      isActive
-                        ? "border-primary bg-primary/10 text-foreground ring-1 ring-primary"
-                        : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
-                    )}
-                  >
-                    <HugeiconsIcon icon={icon} size={16} />
-                    <span className="font-medium leading-tight">
-                      {cat.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+              {state.status === "error" && (
+                <p className="text-sm text-destructive" aria-live="polite">
+                  {state.error}
+                </p>
+              )}
 
-          {state !== null && "error" in state && (
-            <p className="text-sm text-destructive">{state.error}</p>
-          )}
-
-          <form action={dispatch}>
-            <Button type="submit" className="w-full" disabled={!canCheckout}>
-              {isPending ? "Processing..." : "Place Order"}
-            </Button>
-          </form>
-        </footer>
+              <form action={dispatch}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!canCheckout}
+                >
+                  {isPending ? "Processing..." : "Place Order"}
+                </Button>
+              </form>
+            </footer>
+          </>
+        )}
       </aside>
     </div>
   );
