@@ -6,12 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { DashboardHeaderActionSlot } from "@/components/shell/dashboard-header-actions";
 import { buttonVariants } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { MonthFilterPicker } from "@/features/transactions/components/month-filter-picker";
 import { cn } from "@/lib/utils";
 
 interface TransactionHeaderActionsProps {
@@ -74,13 +74,10 @@ function TransactionHeaderControls({
           <span>{formatMonthLabel(selectedDate)}</span>
         </PopoverTrigger>
         <PopoverContent align="center" className="w-auto p-0">
-          <Calendar
+          <MonthFilterPicker
             key={month}
-            mode="single"
-            selected={selectedDate}
-            defaultMonth={selectedDate}
+            selectedDate={selectedDate}
             onSelect={setMonthFromDate}
-            captionLayout="dropdown"
           />
         </PopoverContent>
       </Popover>

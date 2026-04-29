@@ -1,87 +1,34 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { TableLoadingBlock } from "@/components/shell/page-loading";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getAccounts } from "@/features/accounting/queries";
-import { formatPhp } from "@/lib/format";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
-function displayBalance(balance: number, type: string): number {
-  // Liability / Equity / Revenue accumulate as credits, so raw debit-credit is negative.
-  // Negate for intuitive display (positive = healthy).
-  if (type === "Liability" || type === "Equity" || type === "Revenue") {
-    return -balance;
-  }
-  return balance;
-}
-
-export default async function LedgerPage() {
+export default function LedgerPage() {
   return (
-    <div className="space-y-6 p-4 lg:p-6">
-      <p className="text-sm text-muted-foreground">
-        Live balances from journal entries — every sale and void posts here.
-      </p>
-
-      <Suspense fallback={<TableLoadingBlock columns={5} rows={8} />}>
-        <LedgerTable />
-      </Suspense>
+    <div className="flex min-h-full items-center justify-center p-4 lg:p-6">
+      <Card className="flex min-h-[22rem] w-full max-w-xl justify-center rounded-2xl bg-card/80 text-center">
+        <CardHeader>
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+            Locked preview
+          </p>
+          <CardTitle className="text-3xl font-semibold tracking-tight">
+            Ledger is balancing the vibes
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            This mockup shows the shape of the ledger. The full debit-credit
+            drama stays tucked behind the premium curtain until the feature is
+            unlocked.
+          </p>
+          <Link
+            href="/dashboard"
+            className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+          >
+            Back to dashboard
+          </Link>
+        </CardContent>
+      </Card>
     </div>
-  );
-}
-
-async function LedgerTable() {
-  const accounts = await getAccounts();
-
-  return (
-    <>
-      {accounts.length === 0 ? (
-        <p className="text-muted-foreground text-sm py-8 text-center">
-          No accounts found.
-        </p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {accounts.map((account) => (
-              <TableRow key={account.id}>
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {account.code}
-                </TableCell>
-                <TableCell className="font-medium">{account.name}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{account.type}</Badge>
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {formatPhp(displayBalance(account.balance, account.type))}
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/ledger/${account.id}`}
-                    className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-                  >
-                    View
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </>
   );
 }

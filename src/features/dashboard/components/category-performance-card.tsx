@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CategoryPerformanceMetric } from "@/features/dashboard/queries";
 import { formatPhp } from "@/lib/format";
@@ -25,10 +24,9 @@ export function CategoryPerformanceCard({
           </p>
         ) : (
           topCategories.map((category) => (
-            <Link
-              href={`/ledger/${category.accountId}`}
+            <div
               key={category.categoryId}
-              className="group/category block rounded-xl border border-border/60 bg-background/40 p-2.5 transition hover:border-foreground/30 hover:bg-background/70"
+              className="rounded-xl border border-border/60 bg-background/40 p-2.5"
             >
               <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                 <p className="min-w-0 truncate font-medium leading-none">
@@ -43,7 +41,7 @@ export function CategoryPerformanceCard({
                   </p>
                 </div>
               </div>
-            </Link>
+            </div>
           ))
         )}
       </CardContent>

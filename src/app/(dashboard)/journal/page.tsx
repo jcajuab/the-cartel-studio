@@ -1,105 +1,33 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { TableLoadingBlock } from "@/components/shell/page-loading";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getJournalEntries } from "@/features/accounting/queries";
-import { formatDateTime, formatPhp } from "@/lib/format";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default function JournalPage() {
   return (
-    <div className="space-y-6 p-4 lg:p-6">
-      <p className="text-sm text-muted-foreground">
-        All journal entries, newest first.
-      </p>
-
-      <Suspense fallback={<TableLoadingBlock columns={7} rows={8} />}>
-        <JournalTable />
-      </Suspense>
+    <div className="flex min-h-full items-center justify-center p-4 lg:p-6">
+      <Card className="flex min-h-[22rem] w-full max-w-xl justify-center rounded-2xl bg-card/80 text-center">
+        <CardHeader>
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+            Locked preview
+          </p>
+          <CardTitle className="text-3xl font-semibold tracking-tight">
+            Journal is sharpening its pencil
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            The demo hints at the audit trail. The full journal, reversals and
+            all, is premium content waiting for the unlock.
+          </p>
+          <Link
+            href="/dashboard"
+            className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+          >
+            Back to dashboard
+          </Link>
+        </CardContent>
+      </Card>
     </div>
-  );
-}
-
-async function JournalTable() {
-  const entries = await getJournalEntries();
-
-  return (
-    <>
-      {entries.length === 0 ? (
-        <p className="text-muted-foreground text-sm py-8 text-center">
-          No journal entries found.
-        </p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Posted At</TableHead>
-              <TableHead>Account</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Debit</TableHead>
-              <TableHead className="text-right">Credit</TableHead>
-              <TableHead>Reversal</TableHead>
-              <TableHead>Transaction</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                  {formatDateTime(entry.postedAt)}
-                </TableCell>
-                <TableCell>
-                  <span className="font-mono text-xs text-muted-foreground mr-2">
-                    {entry.accountCode}
-                  </span>
-                  <span className="font-medium">{entry.accountName}</span>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {entry.accountType}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm">
-                  {entry.debit > 0 ? formatPhp(entry.debit) : ""}
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm">
-                  {entry.credit > 0 ? formatPhp(entry.credit) : ""}
-                </TableCell>
-                <TableCell>
-                  {entry.isReversal && (
-                    <Badge variant="destructive" className="text-xs">
-                      Reversal
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/transactions/${entry.transactionId}`}
-                    className="text-sm font-mono hover:underline"
-                  >
-                    {entry.transactionId.slice(0, 8)}&hellip;
-                  </Link>
-                  {entry.transactionStatus === "VOIDED" && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-2 text-xs px-1 py-0"
-                    >
-                      Voided
-                    </Badge>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </>
   );
 }

@@ -5,12 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { getActiveItem, NAV_ITEMS } from "@/components/shell/nav-items";
-import RoleSwitcher from "@/components/shell/role-switcher";
+import { getActiveItem, NAV_GROUPS } from "@/components/shell/nav-items";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -41,29 +42,30 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarMenu className="gap-1 px-2 py-1">
-          {NAV_ITEMS.map(({ label, href, icon }) => (
-            <SidebarMenuItem key={href}>
-              <SidebarMenuButton
-                isActive={activeHref === href}
-                tooltip={label}
-                render={
-                  <Link href={href}>
-                    <HugeiconsIcon icon={icon} />
-                    <span>{label}</span>
-                  </Link>
-                }
-              />
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        {NAV_GROUPS.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                {group.items.map(({ label, href, icon }) => (
+                  <SidebarMenuItem key={href}>
+                    <SidebarMenuButton
+                      isActive={activeHref === href}
+                      tooltip={label}
+                      render={
+                        <Link href={href}>
+                          <HugeiconsIcon icon={icon} />
+                          <span>{label}</span>
+                        </Link>
+                      }
+                    />
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
-
-      <SidebarFooter>
-        <div className="flex items-center justify-between px-2 py-1.5 group-data-[collapsible=icon]:justify-center">
-          <RoleSwitcher />
-        </div>
-      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
