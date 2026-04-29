@@ -36,6 +36,7 @@ export function TransactionToolbar({ categories }: TransactionToolbarProps) {
     } else {
       params.delete(key);
     }
+    params.delete("transactionId");
     params.delete("page");
     router.replace(`/transactions?${params.toString()}`);
   }

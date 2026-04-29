@@ -18,14 +18,21 @@ import {
 } from "@/components/ui/tooltip";
 import { voidTransaction } from "@/features/void/actions";
 import { useRole } from "@/hooks/use-role";
+import { cn } from "@/lib/utils";
 
 interface Props {
   transactionId: string;
+  label?: string;
+  className?: string;
 }
 
 type VoidState = { error?: string } | null;
 
-export default function VoidDialog({ transactionId }: Props) {
+export default function VoidDialog({
+  transactionId,
+  label = "Void",
+  className,
+}: Props) {
   const { role } = useRole();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -49,8 +56,9 @@ export default function VoidDialog({ transactionId }: Props) {
       disabled={role === "Bartender"}
       onClick={() => role === "Manager" && setOpen(true)}
       type="button"
+      className={cn(className)}
     >
-      Void
+      {label}
     </Button>
   );
 
@@ -58,7 +66,7 @@ export default function VoidDialog({ transactionId }: Props) {
     <TooltipProvider>
       {role === "Bartender" ? (
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger render={<span />}>
             <span>{triggerButton}</span>
           </TooltipTrigger>
           <TooltipContent>

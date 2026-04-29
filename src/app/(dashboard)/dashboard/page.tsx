@@ -175,7 +175,7 @@ async function RecentTransactionsSection() {
           >
             {recentTransactions.map((transaction) => (
               <Link
-                href={`/transactions/${transaction.id}`}
+                href={`/transactions?transactionId=${transaction.id}`}
                 key={transaction.id}
                 className="block rounded-xl border border-border/60 bg-background/40 p-2.5 transition hover:border-foreground/30 hover:bg-background/70"
               >

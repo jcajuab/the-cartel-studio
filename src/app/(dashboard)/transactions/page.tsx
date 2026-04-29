@@ -15,12 +15,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCategories } from "@/features/sales/queries";
+import {
+  TransactionDetailContent,
+  TransactionDetailNotFound,
+} from "@/features/transactions/components/transaction-detail-content";
+import { TransactionDetailSheet } from "@/features/transactions/components/transaction-detail-sheet";
 import { TransactionHeaderActions } from "@/features/transactions/components/transaction-header-actions";
 import { TransactionTableScrollFade } from "@/features/transactions/components/transaction-table-scroll-fade";
 import { TransactionToolbar } from "@/features/transactions/components/transaction-toolbar";
 import {
   getCurrentMonthKey,
   getTransactionCount,
+  getTransactionDetail,
   getTransactionSummary,
   getTransactions,
   type TransactionFilters,
@@ -42,6 +48,8 @@ const STATUS_TABS: {
   { label: "Voided", value: "VOIDED" },
 ];
 const PAGE_SIZE = 25;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function getStringParam(
   params: { [key: string]: string | string[] | undefined },
@@ -77,6 +85,7 @@ function buildHref(
   const next = new URLSearchParams();
 
   for (const [paramKey, paramValue] of Object.entries(params)) {
+    if (paramKey === "transactionId" && key !== "transactionId") continue;
     if (typeof paramValue === "string" && paramValue) {
       next.set(paramKey, paramValue);
     }
@@ -87,12 +96,23 @@ function buildHref(
   } else {
     next.delete(key);
   }
-  if (key !== "page") {
+  if (key !== "page" && key !== "transactionId") {
     next.delete("page");
   }
 
   const query = next.toString();
   return query ? `/transactions?${query}` : "/transactions";
+}
+
+function buildTransactionHref(
+  params: { [key: string]: string | string[] | undefined },
+  transactionId: string,
+) {
+  return buildHref(params, "transactionId", transactionId);
+}
+
+function isUuid(value: string | undefined): value is string {
+  return Boolean(value && UUID_PATTERN.test(value));
 }
 
 function shortReference(id: string) {
@@ -133,12 +153,18 @@ async function TransactionsContent({
   filters: TransactionFilters;
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const [txList, categories, summary, totalRows] = await Promise.all([
-    getTransactions(filters),
-    getCategories(),
-    getTransactionSummary(filters),
-    getTransactionCount(filters),
-  ]);
+  const selectedTransactionId = getStringParam(searchParams, "transactionId");
+  const detailPromise = isUuid(selectedTransactionId)
+    ? getTransactionDetail(selectedTransactionId)
+    : Promise.resolve(null);
+  const [txList, categories, summary, totalRows, selectedDetail] =
+    await Promise.all([
+      getTransactions(filters),
+      getCategories(),
+      getTransactionSummary(filters),
+      getTransactionCount(filters),
+      detailPromise,
+    ]);
 
   const activeStatus = filters.status ?? "all";
   const currentPage = filters.page ?? 1;
@@ -147,196 +173,219 @@ async function TransactionsContent({
   const endRow = Math.min(currentPage * PAGE_SIZE, totalRows);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 lg:p-6">
-      <section className="grid shrink-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <TransactionMetricCard
-          label="Net Sales"
-          value={formatPhp(summary.netSales)}
-          detail="Completed sales in selected filters"
-        />
-        <TransactionMetricCard
-          label="Completed Sales"
-          value={summary.completedCount.toLocaleString("en-PH")}
-          detail="Checkout transactions completed"
-        />
-        <TransactionMetricCard
-          label="Voided Amount"
-          value={formatPhp(summary.voidedAmount)}
-          detail="Voided transaction total"
-          tone="danger"
-        />
-        <TransactionMetricCard
-          label="Average Ticket"
-          value={formatPhp(summary.averageTicket)}
-          detail="Completed sales divided by count"
-        />
-      </section>
+    <>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 lg:p-6">
+        <section className="grid shrink-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <TransactionMetricCard
+            label="Net Sales"
+            value={formatPhp(summary.netSales)}
+            detail="Completed sales in selected filters"
+          />
+          <TransactionMetricCard
+            label="Completed Sales"
+            value={summary.completedCount.toLocaleString("en-PH")}
+            detail="Checkout transactions completed"
+          />
+          <TransactionMetricCard
+            label="Voided Amount"
+            value={formatPhp(summary.voidedAmount)}
+            detail="Voided transaction total"
+            tone="danger"
+          />
+          <TransactionMetricCard
+            label="Average Ticket"
+            value={formatPhp(summary.averageTicket)}
+            detail="Completed sales divided by count"
+          />
+        </section>
 
-      <Card className="min-h-0 flex-1 gap-0 rounded-2xl bg-card/80 py-0">
-        <div className="flex shrink-0 overflow-x-auto border-b border-border/60 px-4">
-          {STATUS_TABS.map((tab) => {
-            const isActive = activeStatus === tab.value;
-            return (
-              <Link
-                href={buildHref(
-                  searchParams,
-                  "status",
-                  tab.value === "all" ? undefined : tab.value,
-                )}
-                key={tab.value}
-                className={cn(
-                  "relative mr-7 flex h-11 shrink-0 items-center text-sm transition last:mr-0",
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {tab.label}
-                {isActive ? (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
-                ) : null}
-              </Link>
-            );
-          })}
-        </div>
+        <Card className="min-h-0 flex-1 gap-0 rounded-2xl bg-card/80 py-0">
+          <div className="flex shrink-0 overflow-x-auto border-b border-border/60 px-4">
+            {STATUS_TABS.map((tab) => {
+              const isActive = activeStatus === tab.value;
+              return (
+                <Link
+                  href={buildHref(
+                    searchParams,
+                    "status",
+                    tab.value === "all" ? undefined : tab.value,
+                  )}
+                  key={tab.value}
+                  className={cn(
+                    "relative mr-7 flex h-11 shrink-0 items-center text-sm transition last:mr-0",
+                    isActive
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {tab.label}
+                  {isActive ? (
+                    <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
+                  ) : null}
+                </Link>
+              );
+            })}
+          </div>
 
-        <TransactionToolbar categories={categories} />
+          <TransactionToolbar categories={categories} />
 
-        <CardContent className="flex min-h-0 flex-1 flex-col p-0">
-          {txList.length === 0 ? (
-            <p className="flex min-h-0 flex-1 items-center justify-center py-10 text-center text-sm text-muted-foreground">
-              No transactions match the current filters.
-            </p>
-          ) : (
-            <TransactionTableScrollFade className="flex-1">
-              <Table className="table-fixed">
-                <colgroup>
-                  <col className="w-[22%]" />
-                  <col className="w-[13%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[10%]" />
-                </colgroup>
-                <TableHeader className="sticky top-0 z-10 bg-card [&_tr]:border-b">
-                  <TableRow>
-                    <TableHead className="h-11 px-4">Date</TableHead>
-                    <TableHead className="h-11 px-4">Reference ID</TableHead>
-                    <TableHead className="h-11 px-4">
-                      Payment Category
-                    </TableHead>
-                    <TableHead className="h-11 px-4 text-right">
-                      Items
-                    </TableHead>
-                    <TableHead className="h-11 px-4">Status</TableHead>
-                    <TableHead className="h-11 px-4 text-right">
-                      Amount
-                    </TableHead>
-                    <TableHead className="h-11 px-4 text-right">
-                      <span className="sr-only">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {txList.map((tx) => (
-                    <TableRow key={tx.id} className="h-10">
-                      <TableCell className="px-4 text-muted-foreground">
-                        {tx.createdAt ? formatDateTime(tx.createdAt) : "—"}
-                      </TableCell>
-                      <TableCell className="px-4">
-                        <Link
-                          href={`/transactions/${tx.id}`}
-                          className="font-mono text-xs text-foreground underline-offset-4 hover:underline"
-                        >
-                          #{shortReference(tx.id)}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="px-4 font-medium">
-                        {tx.categoryName}
-                      </TableCell>
-                      <TableCell className="px-4 text-right font-mono text-xs">
-                        {itemLabel(tx.itemCount)}
-                      </TableCell>
-                      <TableCell className="px-4">
-                        <Badge
-                          variant={
-                            tx.status === "COMPLETED"
-                              ? "default"
-                              : "destructive"
-                          }
-                        >
-                          {tx.status === "COMPLETED" ? "Completed" : "Voided"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          "px-4 text-right font-mono font-medium tabular-nums",
-                          tx.status === "VOIDED" && "text-destructive",
-                        )}
-                      >
-                        {displayAmount(tx)}
-                      </TableCell>
-                      <TableCell className="px-4 text-right">
-                        <Link
-                          href={`/transactions/${tx.id}`}
+          <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+            {txList.length === 0 ? (
+              <p className="flex min-h-0 flex-1 items-center justify-center py-10 text-center text-sm text-muted-foreground">
+                No transactions match the current filters.
+              </p>
+            ) : (
+              <TransactionTableScrollFade className="flex-1">
+                <Table className="table-fixed">
+                  <colgroup>
+                    <col className="w-[22%]" />
+                    <col className="w-[13%]" />
+                    <col className="w-[17%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[17%]" />
+                    <col className="w-[10%]" />
+                  </colgroup>
+                  <TableHeader className="sticky top-0 z-10 bg-card [&_tr]:border-b">
+                    <TableRow>
+                      <TableHead className="h-11 px-4">Date</TableHead>
+                      <TableHead className="h-11 px-4">Reference ID</TableHead>
+                      <TableHead className="h-11 px-4">
+                        Payment Category
+                      </TableHead>
+                      <TableHead className="h-11 px-4 text-right">
+                        Items
+                      </TableHead>
+                      <TableHead className="h-11 px-4">Status</TableHead>
+                      <TableHead className="h-11 px-4 text-right">
+                        Amount
+                      </TableHead>
+                      <TableHead className="h-11 px-4 text-right">
+                        <span className="sr-only">Actions</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {txList.map((tx) => (
+                      <TableRow key={tx.id} className="h-10">
+                        <TableCell className="px-4 text-muted-foreground">
+                          {tx.createdAt ? formatDateTime(tx.createdAt) : "—"}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <Link
+                            href={buildTransactionHref(searchParams, tx.id)}
+                            className="font-mono text-xs text-foreground underline-offset-4 hover:underline"
+                          >
+                            #{shortReference(tx.id)}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="px-4 font-medium">
+                          {tx.categoryName}
+                        </TableCell>
+                        <TableCell className="px-4 text-right font-mono text-xs">
+                          {itemLabel(tx.itemCount)}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <Badge
+                            variant={
+                              tx.status === "COMPLETED"
+                                ? "default"
+                                : "destructive"
+                            }
+                          >
+                            {tx.status === "COMPLETED" ? "Completed" : "Voided"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell
                           className={cn(
-                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "px-4 text-right font-mono font-medium tabular-nums",
+                            tx.status === "VOIDED" && "text-destructive",
                           )}
                         >
-                          <HugeiconsIcon
-                            icon={ViewIcon}
-                            data-icon="inline-start"
-                          />
-                          View
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TransactionTableScrollFade>
-          )}
-          <div className="flex shrink-0 flex-col gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              Showing {startRow.toLocaleString("en-PH")}-
-              {endRow.toLocaleString("en-PH")} of{" "}
-              {totalRows.toLocaleString("en-PH")}
-            </p>
-            <div className="flex items-center gap-2">
-              <Link
-                aria-disabled={currentPage <= 1}
-                href={buildHref(
-                  searchParams,
-                  "page",
-                  currentPage > 2 ? String(currentPage - 1) : undefined,
-                )}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  currentPage <= 1 && "pointer-events-none opacity-50",
-                )}
-              >
-                Previous
-              </Link>
-              <span className="min-w-16 text-center tabular-nums">
-                Page {currentPage.toLocaleString("en-PH")} of{" "}
-                {totalPages.toLocaleString("en-PH")}
-              </span>
-              <Link
-                aria-disabled={currentPage >= totalPages}
-                href={buildHref(searchParams, "page", String(currentPage + 1))}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  currentPage >= totalPages && "pointer-events-none opacity-50",
-                )}
-              >
-                Next
-              </Link>
+                          {displayAmount(tx)}
+                        </TableCell>
+                        <TableCell className="px-4 text-right">
+                          <Link
+                            href={buildTransactionHref(searchParams, tx.id)}
+                            className={cn(
+                              buttonVariants({
+                                variant: "outline",
+                                size: "sm",
+                              }),
+                            )}
+                          >
+                            <HugeiconsIcon
+                              icon={ViewIcon}
+                              data-icon="inline-start"
+                            />
+                            View
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TransactionTableScrollFade>
+            )}
+            <div className="flex shrink-0 flex-col gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                Showing {startRow.toLocaleString("en-PH")}-
+                {endRow.toLocaleString("en-PH")} of{" "}
+                {totalRows.toLocaleString("en-PH")}
+              </p>
+              <div className="flex items-center gap-2">
+                <Link
+                  aria-disabled={currentPage <= 1}
+                  href={buildHref(
+                    searchParams,
+                    "page",
+                    currentPage > 2 ? String(currentPage - 1) : undefined,
+                  )}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    currentPage <= 1 && "pointer-events-none opacity-50",
+                  )}
+                >
+                  Previous
+                </Link>
+                <span className="min-w-16 text-center tabular-nums">
+                  Page {currentPage.toLocaleString("en-PH")} of{" "}
+                  {totalPages.toLocaleString("en-PH")}
+                </span>
+                <Link
+                  aria-disabled={currentPage >= totalPages}
+                  href={buildHref(
+                    searchParams,
+                    "page",
+                    String(currentPage + 1),
+                  )}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    currentPage >= totalPages &&
+                      "pointer-events-none opacity-50",
+                  )}
+                >
+                  Next
+                </Link>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {selectedTransactionId ? (
+        <TransactionDetailSheet
+          closeHref={buildHref(searchParams, "transactionId")}
+          open={Boolean(selectedTransactionId)}
+        >
+          {selectedDetail ? (
+            <TransactionDetailContent detail={selectedDetail} />
+          ) : (
+            <TransactionDetailNotFound transactionId={selectedTransactionId} />
+          )}
+        </TransactionDetailSheet>
+      ) : null}
+    </>
   );
 }
 

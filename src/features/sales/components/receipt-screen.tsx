@@ -37,6 +37,7 @@ export default function ReceiptScreen({ receipt, onNewSale }: Props) {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME ?? "Cart";
   const shortTransactionId = receipt.transactionId.slice(0, 8).toUpperCase();
   const receiptRule = "*".repeat(30);
+  const transactionHref = `/transactions?transactionId=${receipt.transactionId}`;
 
   return (
     <>
@@ -107,7 +108,7 @@ export default function ReceiptScreen({ receipt, onNewSale }: Props) {
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Transaction</span>
               <Link
-                href={`/transactions/${receipt.transactionId}`}
+                href={transactionHref}
                 className="font-mono text-xs underline-offset-4 hover:underline"
               >
                 {shortTransactionId}
@@ -121,7 +122,7 @@ export default function ReceiptScreen({ receipt, onNewSale }: Props) {
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Link
-                href={`/transactions/${receipt.transactionId}`}
+                href={transactionHref}
                 className={cn(buttonVariants({ variant: "outline" }), "w-full")}
               >
                 View Transaction

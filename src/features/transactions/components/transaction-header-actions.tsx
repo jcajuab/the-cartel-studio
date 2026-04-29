@@ -43,6 +43,7 @@ function TransactionHeaderControls({
     } else {
       params.delete("month");
     }
+    params.delete("transactionId");
     params.delete("page");
     router.replace(`/transactions?${params.toString()}`);
   }
@@ -56,6 +57,7 @@ function TransactionHeaderControls({
   const selectedDate = dateFromMonthKey(month);
   const exportParams = new URLSearchParams(searchParams.toString());
   exportParams.set("month", month);
+  exportParams.delete("transactionId");
 
   return (
     <div className="flex min-w-0 items-center gap-2">

@@ -132,7 +132,8 @@
   }
 }
 
-.pos-print-receipt {
+.pos-print-receipt,
+.transaction-print-receipt {
   display: none;
 }
 
@@ -151,11 +152,14 @@
   }
 
   .pos-print-receipt,
-  .pos-print-receipt * {
+  .pos-print-receipt *,
+  .transaction-print-receipt,
+  .transaction-print-receipt * {
     visibility: visible;
   }
 
-  .pos-print-receipt {
+  .pos-print-receipt,
+  .transaction-print-receipt {
     display: block;
     position: fixed;
     top: 0;
