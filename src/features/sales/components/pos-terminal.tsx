@@ -19,6 +19,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useActionState, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  groupForSku,
+  PRODUCT_GROUPS,
+  type ProductGroupId,
+} from "@/features/products/product-groups";
 import { completeCheckout } from "@/features/sales/actions";
 import { useScrollFade } from "@/hooks/use-scroll-fade";
 import { formatPhp } from "@/lib/format";
@@ -48,15 +53,6 @@ interface Props {
   categories: Category[];
 }
 
-const MENU_GROUPS = [
-  { id: "all", name: "All", prefix: null, icon: Restaurant02Icon },
-  { id: "beer", name: "Beer", prefix: "BEER-", icon: DrinkIcon },
-  { id: "spirits", name: "Spirits", prefix: "SPRT-", icon: BarrelIcon },
-  { id: "cocktails", name: "Cocktails", prefix: "CKTL-", icon: IceCubesIcon },
-  { id: "mixers", name: "Mixers", prefix: "MIX-", icon: SoftDrinkIcon },
-  { id: "food", name: "Food", prefix: "FOOD-", icon: SteakIcon },
-] as const;
-
 const PAYMENT_ICONS: Record<string, typeof Cash01Icon> = {
   Cash: Cash01Icon,
   GCash: SmartPhone01Icon,
@@ -65,12 +61,14 @@ const PAYMENT_ICONS: Record<string, typeof Cash01Icon> = {
   "Bank Transfer": BankIcon,
 };
 
-function groupForSku(sku: string) {
-  return (
-    MENU_GROUPS.find((g) => g.prefix && sku.startsWith(g.prefix)) ??
-    MENU_GROUPS[0]
-  );
-}
+const MENU_GROUP_ICONS: Record<ProductGroupId, typeof Restaurant02Icon> = {
+  all: Restaurant02Icon,
+  beer: DrinkIcon,
+  spirits: BarrelIcon,
+  cocktails: IceCubesIcon,
+  mixers: SoftDrinkIcon,
+  food: SteakIcon,
+};
 
 export default function PosTerminal({ products, categories }: Props) {
   const [cart, setCart] = useState<Map<string, number>>(new Map());
@@ -98,7 +96,7 @@ export default function PosTerminal({ products, categories }: Props) {
 
   const groupCounts = useMemo(() => {
     const counts: Record<string, number> = { all: products.length };
-    for (const group of MENU_GROUPS) {
+    for (const group of PRODUCT_GROUPS) {
       if (group.prefix) {
         counts[group.id] = products.filter((p) =>
           p.sku.startsWith(group.prefix),
@@ -109,7 +107,7 @@ export default function PosTerminal({ products, categories }: Props) {
   }, [products]);
 
   const visibleProducts = useMemo(() => {
-    const group = MENU_GROUPS.find((g) => g.id === activeGroup);
+    const group = PRODUCT_GROUPS.find((g) => g.id === activeGroup);
     if (!group?.prefix) return products;
     return products.filter((p) => p.sku.startsWith(group.prefix));
   }, [products, activeGroup]);
@@ -188,8 +186,9 @@ export default function PosTerminal({ products, categories }: Props) {
             aria-label="Menu categories"
             className="flex shrink-0 gap-2 overflow-x-auto pb-1"
           >
-            {MENU_GROUPS.map((group) => {
+            {PRODUCT_GROUPS.map((group) => {
               const isActive = activeGroup === group.id;
+              const icon = MENU_GROUP_ICONS[group.id];
               return (
                 <button
                   key={group.id}
@@ -211,7 +210,7 @@ export default function PosTerminal({ products, categories }: Props) {
                         : "bg-muted text-muted-foreground",
                     )}
                   >
-                    <HugeiconsIcon icon={group.icon} size={16} />
+                    <HugeiconsIcon icon={icon} size={16} />
                   </span>
                   <span>
                     <span className="block text-sm font-medium leading-tight">
@@ -248,6 +247,7 @@ export default function PosTerminal({ products, categories }: Props) {
               {visibleProducts.map((product) => {
                 const qty = cart.get(product.id) ?? 0;
                 const group = groupForSku(product.sku);
+                const icon = MENU_GROUP_ICONS[group.id];
                 const outOfStock = product.stockQty <= 0;
                 return (
                   <div
@@ -262,7 +262,7 @@ export default function PosTerminal({ products, categories }: Props) {
                   >
                     <div className="flex h-24 items-center justify-center rounded-xl bg-muted/60">
                       <HugeiconsIcon
-                        icon={group.icon}
+                        icon={icon}
                         size={32}
                         className="text-muted-foreground"
                       />
